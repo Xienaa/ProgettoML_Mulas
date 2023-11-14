@@ -1,7 +1,7 @@
 import sqlite3
 import pandas as pd
 
-conn = sqlite3.connect(r"/home/mals/Desktop/ProgettoML_Mulas/database/db.sqlite/shopping_trends.sqlite")
+conn = sqlite3.connect(r"./database/db.sqlite/shopping_trends.sqlite")
 
 
 stud_data = pd.read_csv('https://raw.githubusercontent.com/FabioGagliardiIts/datasets/main/shopping_trends.csv')
