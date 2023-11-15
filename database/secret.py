@@ -55,5 +55,23 @@ def secretget_all():
     result_list = [(Customer(*i).to_dict()) for i in x]
     return result_list
 
+def secretdelete(customer_id):
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM shopping_trends WHERE Customer_ID = ?', (customer_id,))
+    conn.commit()
+
+def secretadd(customer_values):
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO shopping_trends (customer_id, age, gender, item_purchased, category, purchase_amount, location, size, color, season, review_rating, subscription_status, payment_method, shipping_type, discount_applied, promo_code_used, previous_purchases, preferred_payment_method, frequency_of_purchases) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', customer_values)
+    conn.commit()
+
+def secretupdate(customer_id, new_values):
+    cursor = conn.cursor()
+    # Update customer information in the database
+    update_query = 'UPDATE shopping_trends SET '
+    update_query += ', '.join([f'{key} = ?' for key in new_values.keys()])
+    update_query += ' WHERE customer_id = ?'
+    cursor.execute(update_query, tuple(new_values.values()) + (customer_id,))
+    conn.commit()
 
 
