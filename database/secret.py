@@ -53,7 +53,6 @@ def secretget_all():
     cursor = conn.cursor()
     x=cursor.execute('SELECT * FROM shopping_trends').fetchall()
     result_list = [(Customer(*i).to_dict()) for i in x]
-
     return result_list
 
 
