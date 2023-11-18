@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from secret import secretget_all,secretdelete,create_user_in_function,CustomerInput,secretupdate,CustomerUpdateInput
+from secret import secretget_by_id,secretget_all,secretdelete,create_user_in_function,CustomerInput,secretupdate,CustomerUpdateInput
 
 app = FastAPI()
 
@@ -7,6 +7,11 @@ app = FastAPI()
 def get_all(): 
     all_data=secretget_all()   
     return all_data
+
+@app.get("/shoptrendsbyid/{customer_id}")
+def getbyid(customer_id: int): 
+    select_data = secretget_by_id(customer_id)   
+    return select_data
 
 @app.delete("/deletecustomer/{customer_id}")
 def delete(customer_id: int):

@@ -96,6 +96,12 @@ def secretget_all():
     result_list = [(Customer(*i).to_dict()) for i in x]
     return result_list
 
+def secretget_by_id(customer_id):
+    cursor = conn.cursor()
+    query = 'SELECT * FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)'
+    x = cursor.execute(query, (str(customer_id).strip('{}'),)).fetchall()
+    result_list = [(Customer(*i).to_dict()) for i in x]
+    return result_list
 
 def secretdelete(customer_id):
     cursor = conn.cursor()
