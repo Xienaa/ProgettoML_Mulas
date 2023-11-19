@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from secret import secret_update,secretget_all,secretget_by_id,secret_delete,create_user_in_function,CustomerInput,CustomerUpdateInput
+from secret import secret_update,secretget_all,secretget_by_id,secret_delete,create_user_in_function,CustomerInput,Customer
 app = FastAPI()
 
 @app.get("/shoptrends")
@@ -22,6 +22,7 @@ async def create_user_endpoint(customer_data: CustomerInput):
     return create_user_in_function(customer_data)
 
 @app.put("/updateuser/{customer_id}")
-async def update_user_endpoint(customer_id: int, update_data: CustomerUpdateInput):
+async def update_user_endpoint(customer_id: int, update_data: CustomerInput):
     update_data.customer_id = customer_id
-    return secret_update(update_data)
+    ret = secret_update(update_data)
+    return ret

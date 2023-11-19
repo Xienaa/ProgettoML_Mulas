@@ -24,6 +24,30 @@ class CustomerInput(BaseModel):
     previous_purchases: int
     preferred_payment_method: str
     frequency_of_purchases: str
+
+    def to_dict(self):
+        customer_dict = {
+            "customer_id": self.customer_id,
+            "age": self.age,
+            "gender": self.gender,
+            "item_purchased": self.item_purchased,
+            "category": self.category,
+            "purchase_amount": self.purchase_amount,
+            "location": self.location,
+            "size": self.size,
+            "color": self.color,
+            "season": self.season,
+            "review_rating": self.review_rating,
+            "subscription_status": self.subscription_status,
+            "payment_method": self.payment_method,
+            "shipping_type": self.shipping_type,
+            "discount_applied": self.discount_applied,
+            "promo_code_used": self.promo_code_used,
+            "previous_purchases": self.previous_purchases,
+            "preferred_payment_method": self.preferred_payment_method,
+            "frequency_of_purchases": self.frequency_of_purchases
+        }
+        return customer_dict 
 class Customer:
     def __init__(self, customer_id, age, gender, item_purchased, category, purchase_amount, location, size, color, season, review_rating, subscription_status, payment_method, shipping_type, discount_applied, promo_code_used, previous_purchases, preferred_payment_method, frequency_of_purchases):
         self.customer_id = customer_id
@@ -69,26 +93,6 @@ class Customer:
             "frequency_of_purchases": self.frequency_of_purchases
         }
         return customer_dict    
-class CustomerUpdateInput(BaseModel):
-    customer_id: int
-    age: int = None
-    gender: str = None
-    item_purchased: str = None
-    category: str = None
-    purchase_amount: float = None
-    location: str = None
-    size: str = None
-    color: str = None
-    season: str = None
-    review_rating: float = None
-    subscription_status: str = None
-    payment_method: str = None
-    shipping_type: str = None
-    discount_applied: str = None
-    promo_code_used: str = None
-    previous_purchases: int = None
-    preferred_payment_method: str = None
-    frequency_of_purchases: str = None
 
 def secretget_all():
     cursor = conn.cursor()
@@ -144,7 +148,7 @@ def create_user_in_function(customer_data: CustomerInput):
 # Fatto sempre per capire meglio dei problemi avuti al riguardo
         raise HTTPException(status_code=500, detail=f"Errore durante la creazione dell'utente: {str(e)}")
 
-def secret_update(update_data: CustomerUpdateInput):
+def secret_update(update_data: CustomerInput):
     cursor = conn.cursor()
 
     # Check if the customer exists
@@ -156,18 +160,19 @@ def secret_update(update_data: CustomerUpdateInput):
         return {"error": "Customer not found"}
      
     keys = ["Customer ID", "Age", "Gender", "Item Purchased", "Category", "Purchase Amount (USD)", "Location", "Size", "Color", "Season", "Review Rating", "Subscription Status", "Payment Method", "Shipping Type", "Discount Applied", "Promo Code Used", "Previous Purchases", "Preferred Payment Method", "Frequency of Purchases"]
-    keysss = []
+    keysss = ["customer_id", "age", "gender", "item_purchased", "category", "purchase_amount", "location", "size", "color", "season", "review_rating", "subscription_status", "payment_method", "shipping_type", "discount_applied", "promo_code_used", "previous_purchases", "preferred_payment_method", "frequency_of_purchases"]
     # Build the update query dynamically
     update_query = 'UPDATE shopping_trends SET '
-    update_query += ', '.join([f'"{keys[i]}" = "{update_data[]}"' for i in range(19)])
+    update_query += ', '.join([f'"{keys[i]}" = "{update_data.to_dict()[keysss[i]]}"' for i in range(len(keys))])
     update_query += ' WHERE UPPER("Customer ID") = UPPER(?)'
 
     # Build the tuple of values to update
-    values_to_update = [value for value in update_data.dict().values() if value is not None]
-    values_to_update.append(update_data.customer_id)
+    #values_to_update = [value for value in update_data.dict().values() if value is not None]
+    #values_to_update.append(update_data.customer_id)
 
     # Execute the update query
-    cursor.execute(update_query, tuple(values_to_update))
+    cursor.execute(update_query, tuple(str(update_data.customer_id)))
+
     conn.commit()
 
     # Return a success message
