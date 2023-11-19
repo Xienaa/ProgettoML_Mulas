@@ -1,5 +1,5 @@
 import sqlite3
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException
 from pydantic import BaseModel
 
 conn = sqlite3.connect(r"./db.sqlite/shopping_trends.sqlite",check_same_thread=False)
