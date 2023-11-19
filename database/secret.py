@@ -70,7 +70,7 @@ class Customer:
         }
         return customer_dict    
 class CustomerUpdateInput(BaseModel):
-    customer_id: str
+    customer_id: int
     age: int = None
     gender: str = None
     item_purchased: str = None
@@ -80,7 +80,7 @@ class CustomerUpdateInput(BaseModel):
     size: str = None
     color: str = None
     season: str = None
-    review_rating: int = None
+    review_rating: float = None
     subscription_status: str = None
     payment_method: str = None
     shipping_type: str = None
@@ -103,25 +103,20 @@ def secretget_by_id(customer_id):
     result_list = [(Customer(*i).to_dict()) for i in x]
     return result_list
 
-def secretdelete(customer_id):
+def secret_delete(customer_id):
     cursor = conn.cursor()
-
 # Stampa il valore di customer_id prima dell'operazione. 
 # l'ho fatto per capire meglio dei problemi che avevo durante la creazione della funzione
     print(f"Valore di customer_id prima dell'eliminazione: {customer_id}")
-
 # Elimina le righe corrispondenti
     cursor.execute('DELETE FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)', (str(customer_id).strip('{}'),))
     conn.commit()
-
 # Controlla il numero di righe eliminate
     if cursor.rowcount == 0:
         print("Nessuna riga eliminata con il customer_id specificato")
         return  {"Operazione": "Nessuna riga eliminata con il customer_id specificato"}
-
 # Stampa un messaggio dopo l'eliminazione
     print("Eliminazione effettuata")
-
     return {"Operazione": "Eliminazione avvenuta con successo!"}
 
 
@@ -149,24 +144,34 @@ def create_user_in_function(customer_data: CustomerInput):
 # Fatto sempre per capire meglio dei problemi avuti al riguardo
         raise HTTPException(status_code=500, detail=f"Errore durante la creazione dell'utente: {str(e)}")
 
-
-def secretupdate(update_data: CustomerUpdateInput):
+def secret_update(update_data: CustomerUpdateInput):
     cursor = conn.cursor()
 
-    # Costruisci la query di aggiornamento dinamicamente
-    update_query = 'UPDATE shopping_trends SET '
-    update_query += ', '.join([f'"{key}" = ?' for key, value in update_data.dict().items() if value is not None])
-    update_query += ' WHERE "Customer ID" = ?'
+    # Check if the customer exists
+    check_query = 'SELECT 1 FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)'
+    cursor.execute(check_query, (update_data.customer_id,))
+    customer_exists = cursor.fetchone()
 
-    # Costruisci la tupla dei valori da aggiornare
+    if not customer_exists:
+        return {"error": "Customer not found"}
+     
+    keys = ["Customer ID", "Age", "Gender", "Item Purchased", "Category", "Purchase Amount (USD)", "Location", "Size", "Color", "Season", "Review Rating", "Subscription Status", "Payment Method", "Shipping Type", "Discount Applied", "Promo Code Used", "Previous Purchases", "Preferred Payment Method", "Frequency of Purchases"]
+    keysss = []
+    # Build the update query dynamically
+    update_query = 'UPDATE shopping_trends SET '
+    update_query += ', '.join([f'"{keys[i]}" = "{update_data[]}"' for i in range(19)])
+    update_query += ' WHERE UPPER("Customer ID") = UPPER(?)'
+
+    # Build the tuple of values to update
     values_to_update = [value for value in update_data.dict().values() if value is not None]
     values_to_update.append(update_data.customer_id)
 
-    # Esegui la query di aggiornamento
+    # Execute the update query
     cursor.execute(update_query, tuple(values_to_update))
     conn.commit()
 
-    # Restituisci un messaggio di successo
-    return {"Operazione": "Aggiornamento avvenuto con successo!"}
+    # Return a success message
+    return {"Operation": "Update successful!"}
+
 
 
