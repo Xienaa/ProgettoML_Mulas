@@ -11,4 +11,4 @@ async def calculate_average_age_endpoint():
 @app.get("/importo_medio_acquisto")
 async def calcola_importo_medio_acquisto():
     importo_medio_acquisto = calcola_spesa_media_da_db()
-    return {"importo_medio_acquisto": importo_medio_acquisto}
+    return {"importo_medio_acquisto": importo_medio_acquisto} 
