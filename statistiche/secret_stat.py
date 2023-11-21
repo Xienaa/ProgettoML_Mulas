@@ -2,19 +2,27 @@ import sqlite3
 from fastapi import HTTPException
 import pandas as pd
 
+# Connessione al database SQLite
 conn = sqlite3.connect(r"../database/db.sqlite/shopping_trends.sqlite", check_same_thread=False)
 
+# Funzione per aprire la connessione al database
 def apri_connessione_database():
     return sqlite3.connect(r"../database/db.sqlite/shopping_trends.sqlite", check_same_thread=False)
 
+# Funzione per calcolare l'età media dal database
 def calcola_eta_media_da_db():
     try:
+        # Crea un cursore per eseguire query SQL
         cursor = conn.cursor()
+
+        # Query per calcolare l'età media
         query = 'SELECT AVG("Age") FROM shopping_trends'
         cursor.execute(query)
         eta_media = cursor.fetchone()[0]
+
         # Arrotonda l'età media a tre cifre decimali
         eta_media_arrotondata = round(eta_media, 3)
+
         risultato = {
             'eta_media': eta_media_arrotondata,
             'messaggio': 'Calcolo dell\'età media avvenuto con successo.'
@@ -23,9 +31,13 @@ def calcola_eta_media_da_db():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore durante il calcolo dell'età media: {str(e)}")
 
+# Funzione per calcolare la spesa media dal database
 def calcola_spesa_media_da_db():
     try:
+        # Crea un cursore per eseguire query SQL
         cursor = conn.cursor()
+
+        # Query per calcolare la spesa media
         query = 'SELECT AVG([Purchase Amount (USD)]) FROM shopping_trends'
         cursor.execute(query)
         media_purchase_amount = cursor.fetchone()[0]
@@ -44,6 +56,7 @@ def calcola_spesa_media_da_db():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Errore durante il calcolo della media del 'Purchase Amount (USD)': {str(e)}")
 
+# Funzione asincrona per calcolare la mediana delle "Previous Purchases"
 async def calcola_mediana_previous_purchases():
     try:
         # Apri la connessione al database
@@ -73,7 +86,7 @@ async def calcola_mediana_previous_purchases():
         # Chiudi la connessione al database alla fine
         conn_db.close()
 
-
+# Funzione asincrona per calcolare la distribuzione percentuale
 async def calcola_distribuzione_percentuale():
     try:
         # Apri la connessione al database
@@ -84,7 +97,7 @@ async def calcola_distribuzione_percentuale():
         df = pd.read_sql_query(query, conn_db)
 
         if not df.empty:
-            # Rimuovi spazi extra e converti tutto in minuscolo
+            # Pulisci il testo nella colonna 'Frequency of Purchases'
             cleaned_text = df['Frequency of Purchases'].str.strip().str.lower()
 
             # Rimuovi eventuali spazi vuoti rimasti dopo la pulizia

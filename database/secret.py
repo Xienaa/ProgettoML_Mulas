@@ -2,8 +2,10 @@ import sqlite3
 from fastapi import HTTPException
 from pydantic import BaseModel
 
-conn = sqlite3.connect(r"./db.sqlite/shopping_trends.sqlite",check_same_thread=False)
+# Connessione al database SQLite
+conn = sqlite3.connect(r"./db.sqlite/shopping_trends.sqlite", check_same_thread=False)
 
+# Definizione del modello Pydantic per i dati di input del cliente
 class CustomerInput(BaseModel):
     customer_id: str
     age: int
@@ -48,6 +50,8 @@ class CustomerInput(BaseModel):
             "frequency_of_purchases": self.frequency_of_purchases
         }
         return customer_dict 
+
+# Classe rappresentante un cliente
 class Customer:
     def __init__(self, customer_id, age, gender, item_purchased, category, purchase_amount, location, size, color, season, review_rating, subscription_status, payment_method, shipping_type, discount_applied, promo_code_used, previous_purchases, preferred_payment_method, frequency_of_purchases):
         self.customer_id = customer_id
@@ -94,12 +98,14 @@ class Customer:
         }
         return customer_dict    
 
+# Funzione per ottenere tutti i clienti
 def secretget_all():
     cursor = conn.cursor()
-    x=cursor.execute('SELECT * FROM shopping_trends').fetchall()
+    x = cursor.execute('SELECT * FROM shopping_trends').fetchall()
     result_list = [(Customer(*i).to_dict()) for i in x]
     return result_list
 
+# Funzione per ottenere un cliente per ID
 def secretget_by_id(customer_id):
     cursor = conn.cursor()
     query = 'SELECT * FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)'
@@ -107,76 +113,67 @@ def secretget_by_id(customer_id):
     result_list = [(Customer(*i).to_dict()) for i in x]
     return result_list
 
+# Funzione per eliminare un cliente per ID
 def secret_delete(customer_id):
     cursor = conn.cursor()
-# Stampa il valore di customer_id prima dell'operazione. 
-# l'ho fatto per capire meglio dei problemi che avevo durante la creazione della funzione
+    # Stampa il valore di customer_id prima dell'operazione.
     print(f"Valore di customer_id prima dell'eliminazione: {customer_id}")
-# Elimina le righe corrispondenti
+    # Elimina le righe corrispondenti
     cursor.execute('DELETE FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)', (str(customer_id).strip('{}'),))
     conn.commit()
-# Controlla il numero di righe eliminate
+    # Controlla il numero di righe eliminate
     if cursor.rowcount == 0:
         print("Nessuna riga eliminata con il customer_id specificato")
-        return  {"Operazione": "Nessuna riga eliminata con il customer_id specificato"}
-# Stampa un messaggio dopo l'eliminazione
+        return {"Operazione": "Nessuna riga eliminata con il customer_id specificato"}
+    # Stampa un messaggio dopo l'eliminazione
     print("Eliminazione effettuata")
     return {"Operazione": "Eliminazione avvenuta con successo!"}
 
-
+# Funzione per creare un nuovo cliente
 def create_user(customer_id, age, gender, item_purchased, category, purchase_amount, location, size, color, season, review_rating, subscription_status, payment_method, shipping_type, discount_applied, promo_code_used, previous_purchases, preferred_payment_method, frequency_of_purchases):
-    
     cursor = conn.cursor()
-# Esegui l'inserimento dei dati nella tabella 'shopping_trends'
+    # Esegui l'inserimento dei dati nella tabella 'shopping_trends'
     cursor.execute('INSERT INTO shopping_trends ("Customer ID", "Age", "Gender", "Item Purchased", "Category", "Purchase Amount (USD)", "Location", "Size", "Color", "Season", "Review Rating", "Subscription Status", "Payment Method", "Shipping Type", "Discount Applied", "Promo Code Used", "Previous Purchases", "Preferred Payment Method", "Frequency of Purchases") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                    (customer_id, age, gender, item_purchased, category, purchase_amount, location, size, color, season, review_rating, subscription_status, payment_method, shipping_type, discount_applied, promo_code_used, previous_purchases, preferred_payment_method, frequency_of_purchases))
-
-# Effettua il commit delle modifiche nel database
+    # Effettua il commit delle modifiche nel database
     conn.commit()
-
-# Restituisci un messaggio di successo
+    # Restituisci un messaggio di successo
     return {"Operazione": "Aggiunta avvenuta con successo!"}
 
-
+# Funzione per creare un nuovo cliente utilizzando il modello Pydantic
 def create_user_in_function(customer_data: CustomerInput):
     try:
-# Richiama 'create_user' con i dati forniti da 'customer_data'
+        # Richiama 'create_user' con i dati forniti da 'customer_data'
         result = create_user(**customer_data.dict())
         return result
     except Exception as e:
-# Gestisce eventuali errori sollevando un'eccezione HTTP con un messaggio dettagliato
-# Fatto sempre per capire meglio dei problemi avuti al riguardo
+        # Gestisce eventuali errori sollevando un'eccezione HTTP con un messaggio dettagliato
+        # Fatto sempre per capire meglio dei problemi avuti al riguardo
         raise HTTPException(status_code=500, detail=f"Errore durante la creazione dell'utente: {str(e)}")
 
+# Funzione per aggiornare i dati di un cliente
 def secret_update(update_data: CustomerInput):
     cursor = conn.cursor()
-
-    # Check if the customer exists
+    # Verifica se il cliente esiste
     check_query = 'SELECT 1 FROM shopping_trends WHERE UPPER("Customer ID") = UPPER(?)'
     cursor.execute(check_query, (update_data.customer_id,))
     customer_exists = cursor.fetchone()
 
     if not customer_exists:
-        return {"error": "Customer not found"}
-     
+        return {"error": "Cliente non trovato"}
+
     keys = ["Customer ID", "Age", "Gender", "Item Purchased", "Category", "Purchase Amount (USD)", "Location", "Size", "Color", "Season", "Review Rating", "Subscription Status", "Payment Method", "Shipping Type", "Discount Applied", "Promo Code Used", "Previous Purchases", "Preferred Payment Method", "Frequency of Purchases"]
     keysss = ["customer_id", "age", "gender", "item_purchased", "category", "purchase_amount", "location", "size", "color", "season", "review_rating", "subscription_status", "payment_method", "shipping_type", "discount_applied", "promo_code_used", "previous_purchases", "preferred_payment_method", "frequency_of_purchases"]
-    # Build the update query dynamically
+    # Costruisci la query di aggiornamento dinamicamente
     update_query = 'UPDATE shopping_trends SET '
     update_query += ', '.join([f'"{keys[i]}" = "{update_data.to_dict()[keysss[i]]}"' for i in range(len(keys))])
     update_query += ' WHERE UPPER("Customer ID") = UPPER(?)'
 
-    # Build the tuple of values to update
-    #values_to_update = [value for value in update_data.dict().values() if value is not None]
-    #values_to_update.append(update_data.customer_id)
-
-    # Execute the update query
+    # Esegui la query di aggiornamento
     cursor.execute(update_query, tuple(str(update_data.customer_id)))
 
+    # Effettua il commit delle modifiche
     conn.commit()
 
-    # Return a success message
-    return {"Operation": "Update successful!"}
-
-
-
+    # Restituisci un messaggio di successo
+    return {"Operazione": "Aggiornamento riuscito!"}
