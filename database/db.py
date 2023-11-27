@@ -3,12 +3,12 @@ import requests
 import pandas as pd
 from io import StringIO
 
-# Connect to the SQLite database
+# Connessione al database SQLite
 conn = sqlite3.connect(r"./database/db.sqlite/shopping_trends.sqlite")
 cursor = conn.cursor()
 
-# Define the schema for the table
-stud_data = """
+# Definizione dello schema per la tabella
+schema_tabella = """
     Customer_ID INTEGER,
     Age INTEGER,
     Gender TEXT,
@@ -30,27 +30,27 @@ stud_data = """
     Frequency_of_Purchases INTEGER
 """
 
-# Create the table
-cursor.execute(f'CREATE TABLE IF NOT EXISTS shopping_trends ({stud_data})')
+# Creazione della tabella
+cursor.execute(f'CREATE TABLE IF NOT EXISTS shopping_trends ({schema_tabella})')
 
-# URL of the CSV file
+# URL del file CSV
 csv_url = 'https://raw.githubusercontent.com/FabioGagliardiIts/datasets/main/shopping_trends.csv'
 
-# Download CSV content and convert it to a file-like object
+# Scaricamento del contenuto CSV e conversione in un oggetto simile a un file
 response = requests.get(csv_url)
 csv_content = StringIO(response.text)
 
-# Read CSV data and insert into the table
+# Lettura dei dati CSV e inserimento nella tabella
 df = pd.read_csv(csv_content)
 df.to_sql("shopping_trends", conn, if_exists='replace', index=False, dtype='TEXT')
 
-# Commit the changes
+# Conferma le modifiche
 conn.commit()
 
-# Select and print the data to verify
+# Seleziona e stampa i dati per verificarli
 cursor.execute('SELECT * FROM shopping_trends')
 for row in cursor.fetchall():
     print(row)
 
-# Close the connection
+# Chiude la connessione
 conn.close()
