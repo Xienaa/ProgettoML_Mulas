@@ -1,10 +1,6 @@
-from fastapi import FastAPI, File, UploadFile
-from secret_cls import (classifica_vestiti)
+import os
+from fastapi import File, UploadFile, FastAPI
+from secret_cls import ImageInput, Image, transform, torch,model, , JSONResponse, 
 # Inizializza l'app FastAPI
 app = FastAPI()
 
-# Endpoint per l'upload delle immagini
-@app.post("/upload_image")
-async def upload_image(file: UploadFile = File(...)):
-    # Chiama la funzione di classificazione e ritorna la risposta
-    return classifica_vestiti(file)
