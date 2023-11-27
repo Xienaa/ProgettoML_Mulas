@@ -1,72 +1,49 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
-from PIL import Image
-import torch
-import io
-from torchvision import transforms
-from ultralytics import YOLO  # Import your YOLOv8 model module
+import cv2
+import os
+from ultralytics import YOLO
 
 app = FastAPI()
 
-# Load the pre-trained YOLOv8 model
-model = YOLO('yolov8n.pt')  # Replace with your YOLOv8 model constructor
+model_path = os.path.join('/home/mals/ProgettoML_Mulas/classificazione/Adam01/runs/detect/AdamMulas01/weights/last.pt')
 
-# Load the checkpoint from Ultralytics
-checkpoint = torch.load('/home/mals/ProgettoML_Mulas/classificazione/Adam01/runs/detect/AdamMulas01/weights/best.pt')
+model = YOLO(model_path)
+threshold = 0.5
 
-# Extract the state_dict from the Ultralytics DetectionModel
-model_state_dict = checkpoint['model'].state_dict()
+clothes_folder = "clothes_images"
+other_folder = "other_images"
 
-# Load the state_dict into your YOLOv8 model
-model.load_state_dict(model_state_dict)
+# Create folders if they don't exist
+os.makedirs(clothes_folder, exist_ok=True)
+os.makedirs(other_folder, exist_ok=True)
 
-model.eval()
+@app.post("/uploadimage/")
+async def create_upload_image(file: UploadFile = File(...)):
+    # Save the uploaded file
+    with open(file.filename, "wb") as f:
+        f.write(file.file.read())
 
-# Define image transformation
-transform = transforms.Compose([
-    transforms.Resize((640, 640)),  # Adjust size according to YOLOv8 input size
-    transforms.ToTensor(),
-])
+    # Load the YOLO model
+    image = cv2.imread(file.filename)
+    results = model(image)[0]
 
-# Define API input model
-class ImageInput(BaseModel):
-    file: UploadFile
+    is_clothes = False
 
-@app.post("/predict")
-async def predict_clothes(image: ImageInput = File(...)):
-    contents = await image.file.read()
-    image_pil = Image.open(io.BytesIO(contents)).convert('RGB')
-    image_tensor = transform(image_pil).unsqueeze(0)
+    # Check if any of the detected objects belong to the "clothes" category
+    for result in results.boxes.data.tolist():
+        x1, y1, x2, y2, score, class_id = result
+        if score > threshold and results.names[int(class_id)] in ["long sleeve dress", "long sleeve outwear", "long sleeve top", "short sleeve dress", "short sleeve outwear", "short sleeve top", "shorts", "skirt", "sling dress", "sling", "trousers", "vest dress", "vest"]:
+            is_clothes = True
+            break
 
-    with torch.no_grad():
-        # Assuming YOLOv8 output includes class indices, bounding boxes, and scores
-        output = model(image_tensor)
-        class_indices, _, _ = torch.nonzero(output['pred'][0][:, :, 4] > 0.5, as_tuple=True)
-
-    # Assuming you have a function to map class indices to class names
-    class_names = map_indices_to_names(class_indices)
-
-    # Check if any of the detected classes are related to clothes
-    clothes_classes = ['long sleeve dress', 'long sleeve outwear', 'long sleeve top', 'short sleeve dress',
-                       'short sleeve outwear', 'short sleeve top', 'shorts', 'skirt', 'sling dress', 'sling',
-                       'trousers', 'vest dress', 'vest']
-
-    # Include any logic for class detection based on your specific use case
-    detected_clothes = any(class_name in clothes_classes for class_name in class_names)
-
-    # If clothes are detected, create or save in the appropriate folder
-    if detected_clothes:
-        # Create a folder if it doesn't exist
-        folder_path = '/path/to/save/images/clothes'  # Replace with your desired path
-        os.makedirs(folder_path, exist_ok=True)
-
-        # Save the image in the folder with a unique name
-        image_save_path = os.path.join(folder_path, f'{uuid.uuid4()}.jpg')
-        image_pil.save(image_save_path)
-
-        # Return the result as JSON
-        return JSONResponse(content={"is_clothes": True, "saved_path": image_save_path})
+    if is_clothes:
+        # Save the processed image in the "clothes_images" folder
+        result_image_path = os.path.join(clothes_folder, f"result_{file.filename}")
+        cv2.imwrite(result_image_path, image)
     else:
-        # Return the result as JSON indicating that the image is not clothes
-        return JSONResponse(content={"is_clothes": False, "message": "L'immagine non è un vestito"})
+        # Provide output without saving the image
+        result_image_path = None
+
+    return JSONResponse(content={"is_clothes": is_clothes, "result_image_path": result_image_path})
+
