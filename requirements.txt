@@ -1,0 +1,6 @@
+fastapi
+ultralytics
+requests
+pandas
+pydantic
+sqlite3
